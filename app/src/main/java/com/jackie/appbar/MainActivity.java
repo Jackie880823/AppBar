@@ -16,29 +16,34 @@
 
 package com.jackie.appbar;
 
+import android.annotation.TargetApi;
 import android.content.Intent;
+import android.os.Build;
 import android.os.Bundle;
 import android.support.v4.view.MenuItemCompat;
 import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.SearchView;
 import android.support.v7.widget.ShareActionProvider;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.view.View;
 
 public class MainActivity extends AppCompatActivity {
 
     public static final String TAG = "MainActivity";
-    private ShareActionProvider mShareActionProvider;
 
+    @TargetApi(Build.VERSION_CODES.LOLLIPOP)
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        Toolbar toolbar = (Toolbar) findViewById(R.id.my_toolbar);
-        setSupportActionBar(toolbar);
+        if (SDKUtils.IS_LOLLIPOP) {
+            android.widget.Toolbar toolbar = (android.widget.Toolbar) findViewById(R.id.my_toolbar);
+            setActionBar(toolbar);
+        } else {
+            Toolbar toolbar = (Toolbar) findViewById(R.id.my_toolbar);
+            setSupportActionBar(toolbar);
+        }
     }
 
     /**
@@ -72,11 +77,20 @@ public class MainActivity extends AppCompatActivity {
         // Inflate menu resource file
         getMenuInflater().inflate(R.menu.sample_actions, menu);
 
-        // Locate MenuItem with ShareActionProvider
-        MenuItem menuItem = menu.findItem(R.id.action_share);
-        // Fetch and store ShareActionProvider
-        mShareActionProvider = (ShareActionProvider) MenuItemCompat.getActionProvider(menuItem);
+        Log.i(TAG, "onOptionsItemSelected: click share");
 
+        Intent sendIntent = new Intent(Intent.ACTION_SEND);
+        sendIntent.putExtra(Intent.EXTRA_TEXT, "This is my text to send");
+        sendIntent.setType("text/plain");
+
+        MenuItem item = menu.findItem(R.id.action_share);
+        if (SDKUtils.IS_ICE_CREAM_SANDWICH) {
+            android.widget.ShareActionProvider shareActionProvider = (android.widget.ShareActionProvider) item.getActionProvider();
+            shareActionProvider.setShareIntent(sendIntent);
+        } else {
+            ShareActionProvider shareActionProvider = (ShareActionProvider) MenuItemCompat.getActionProvider(item);
+            shareActionProvider.setShareIntent(sendIntent);
+        }
         // Return true to display menu
         return true;
     }
@@ -104,27 +118,7 @@ public class MainActivity extends AppCompatActivity {
                 startActivity(new Intent(this, MyChildActivity.class));
                 return true;
 
-            case R.id.action_search:
-                SearchView searchView = (SearchView) MenuItemCompat.getActionView(item);
-                searchView.setOnSearchClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View v) {
-                        Log.i(TAG, "onClick: search");
-                    }
-                });
-                return true;
-
             case R.id.action_settings:
-                return true;
-
-            case R.id.action_share:
-                Log.i(TAG, "onOptionsItemSelected: click share");
-                if (mShareActionProvider != null) {
-                    Intent sendIntent = new Intent(Intent.ACTION_SEND);
-                    sendIntent.putExtra(Intent.EXTRA_TEXT, "This is my text to send");
-                    sendIntent.setType("text/plain");
-                    mShareActionProvider.setShareIntent(sendIntent);
-                }
                 return true;
 
             default:
